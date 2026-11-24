@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CVP - Salon Multijoueur</title>
+  <style>
+    :root {
+      --bg-noir: #0d0d0d;
+      --card-noir: #1a1a1a;
+      --border-gris: #333333;
+      --blanc: #ffffff;
+      --gris-texte: #a3a3a3;
+      --rouge: #e63946;
+      --vert: #10b981;
+      --vert-hover: #059669;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-noir);
+      color: var(--blanc);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      width: 100%;
+      max-width: 460px;
+      margin-bottom: 4px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      letter-spacing: 3px;
+      font-weight: 900;
+    }
+
+    .badge-roles {
+      font-size: 0.85rem;
+      margin-top: 4px;
+      color: var(--gris-texte);
+    }
+
+    .badge-roles span.citoyen { color: var(--blanc); font-weight: 700; }
+    .badge-roles span.voleur { color: var(--rouge); font-weight: 700; }
+    .badge-roles span.policier { color: var(--vert); font-weight: 700; }
+
+    .bloc {
+      width: 100%;
+      max-width: 460px;
+      background-color: var(--card-noir);
+      border: 1px solid var(--border-gris);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bloc-titre {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.95rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--blanc);
+    }
+
+    .etape-tag {
+      font-size: 0.75rem;
+      background-color: var(--bg-noir);
+      border: 1px solid var(--border-gris);
+      color: var(--gris-texte);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    /* PARTIE 1 : CHOIX SALLE */
+    .choix-salle-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-mode {
+      background-color: var(--bg-noir);
+      color: var(--blanc);
+      border: 1px solid var(--border-gris);
+      padding: 14px 10px;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-mode.actif-creer {
+      background-color: var(--vert);
+      border-color: var(--vert);
+      color: var(--blanc);
+    }
+
+    .btn-mode.actif-rejoindre {
+      background-color: var(--blanc);
+      border-color: var(--blanc);
+      color: var(--bg-noir);
+    }
+
+    .zone-code-salle {
+      display: none;
+      margin-top: 4px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-gris);
+    }
+
+    .code-affiche {
+      text-align: center;
+      background-color: var(--bg-noir);
+      border: 1px dashed var(--vert);
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .code-affiche .label {
+      font-size: 0.8rem;
+      color: var(--gris-texte);
+      margin-bottom: 4px;
+    }
+
+    .code-affiche .valeur {
+      font-size: 1.8rem;
+      font-weight: 900;
+      letter-spacing: 6px;
+      color: var(--vert);
+    }
+
+    /* CHAMPS & BOUTONS COMMUNS */
+    .ligne-saisie {
+      display: flex;
+      gap: 8px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background-color: var(--bg-noir);
+      border: 1px solid var(--border-gris);
+      color: var(--blanc);
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--blanc);
+    }
+
+    #input-code-rejoindre {
+      text-transform: uppercase;
+      text-align: center;
+      font-weight: 800;
+      letter-spacing: 3px;
+    }
+
+    .btn-secondaire {
+      background-color: var(--blanc);
+      color: var(--bg-noir);
+      border: none;
+      padding: 0 16px;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 0.95rem;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .btn-secondaire:active {
+      opacity: 0.85;
+    }
+
+    /* PARTIE 3 : LISTE TEMPS RÉEL */
+    .compteur-pill {
+      background-color: var(--bg-noir);
+      border: 1px solid var(--border-gris);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .compteur-pill.complet {
+      border-color: var(--vert);
+      color: var(--vert);
+    }
+
+    #liste-connectes {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 240px;
+      overflow-y: auto;
+    }
+
+    .item-joueur {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--bg-noir);
+      border: 1px solid var(--border-gris);
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+    }
+
+    .item-joueur .nom-joueur {
+      font-weight: 700;
+      color: var(--blanc);
+    }
+
+    .item-joueur .statut-connecte {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--vert);
+    }
+
+    .liste-vide {
+      text-align: center;
+      color: var(--gris-texte);
+      font-size: 0.88rem;
+      padding: 14px 0;
+    }
+
+    /* PARTIE 4 : LANCER LA PARTIE */
+    .btn-lancer {
+      width: 100%;
+      max-width: 460px;
+      background-color: var(--vert);
+      color: var(--blanc);
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+    }
+
+    .btn-lancer:active {
+      background-color: var(--vert-hover);
+    }
+
+    .btn-lancer:disabled {
+      background-color: #262626;
+      color: #666666;
+      cursor: not-allowed;
+    }
+
+    .msg-feedback {
+      font-size: 0.84rem;
+      min-height: 18px;
+    }
+
+    .msg-erreur {
+      color: var(--rouge);
+      font-weight: 600;
+    }
+
+    .msg-ok {
+      color: var(--vert);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>CVP</h1>
+    <div class="badge-roles">
+      <span class="citoyen">Citoyens</span> •
+      <span class="voleur">Voleurs</span> •
+      <span class="policier">Policiers</span>
+    </div>
+  </header>
+
+  <!-- PARTIE 1 : CHOIX ENTRE CRÉER UNE SALLE OU REJOINDRE UNE SALLE -->
+  <section class="bloc" id="partie-1">
+    <div class="bloc-titre">
+      <span>1. Salle de jeu</span>
+      <span class="etape-tag">Étape 1</span>
+    </div>
+
+    <div class="choix-salle-grid">
+      <button type="button" class="btn-mode" id="btn-creer-salle">Créer une salle</button>
+      <button type="button" class="btn-mode" id="btn-rejoindre-salle">Rejoindre une salle</button>
+    </div>
+
+    <!-- Sous-bloc création -->
+    <div class="zone-code-salle" id="zone-creation">
+      <div class="code-affiche">
+        <div class="label">Code à partager aux joueurs</div>
+        <div class="valeur" id="code-salle-affiche">----</div>
+      </div>
+    </div>
+
+    <!-- Sous-bloc rejoindre -->
+    <div class="zone-code-salle" id="zone-rejoindre">
+      <div class="ligne-saisie">
+        <input type="text" id="input-code-rejoindre" placeholder="CODE SALLE" maxlength="6" autocomplete="off">
+        <button type="button" class="btn-secondaire" id="btn-valider-code">Valider</button>
+      </div>
+    </div>
+
+    <div class="msg-feedback" id="feedback-salle"></div>
+  </section>
+
+  <!-- PARTIE 2 : RENSEIGNER MON NOM DE JOUEUR -->
+  <section class="bloc" id="partie-2">
+    <div class="bloc-titre">
+      <span>2. Mon nom de joueur</span>
+      <span class="etape-tag">Étape 2</span>
+    </div>
+
+    <div class="ligne-saisie">
+      <input type="text" id="input-nom-joueur" placeholder="Entre ton prénom / pseudo..." maxlength="24" autocomplete="off">
+      <button type="button" class="btn-secondaire" id="btn-entrer-salle">Entrer</button>
+    </div>
+
+    <div class="msg-feedback" id="feedback-joueur"></div>
+  </section>
+
+  <!-- PARTIE 3 : LISTE DES PERSONNES CONNECTÉES EN TEMPS RÉEL -->
+  <section class="bloc" id="partie-3">
+    <div class="bloc-titre">
+      <span>3. Joueurs connectés</span>
+      <span class="compteur-pill" id="compteur-connectes">0 / 17</span>
+    </div>
+
+    <ul id="liste-connectes">
+      <li class="liste-vide">Choisis ou rejoins une salle pour voir les joueurs connectés.</li>
+    </ul>
+  </section>
+
+  <!-- PARTIE 4 : BOUTON LANCER LA PARTIE -->
+  <button type="button" class="btn-lancer" id="btn-lancer-partie" disabled>Lancer la partie</button>
+  <div class="msg-feedback" id="feedback-lancer" style="text-align:center;"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get,
+      push,
+      onValue
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBswt89qiIV6hybxxQ5IreoSOtMPV7mLpE",
+      authDomain: "cvp-jeu.firebaseapp.com",
+      databaseURL: "https://cvp-jeu-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "cvp-jeu",
+      storageBucket: "cvp-jeu.firebasestorage.app",
+      messagingSenderId: "447644350926",
+      appId: "1:447644350926:web:d4cf19cff5b6bab0ce539f",
+      measurementId: "G-9KMFXCEMCJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Éléments UI
+    const btnCreerSalle = document.getElementById("btn-creer-salle");
+    const btnRejoindreSalle = document.getElementById("btn-rejoindre-salle");
+    const zoneCreation = document.getElementById("zone-creation");
+    const zoneRejoindre = document.getElementById("zone-rejoindre");
+    const codeSalleAffiche = document.getElementById("code-salle-affiche");
+    const inputCodeRejoindre = document.getElementById("input-code-rejoindre");
+    const btnValiderCode = document.getElementById("btn-valider-code");
+    const feedbackSalle = document.getElementById("feedback-salle");
+
+    const inputNomJoueur = document.getElementById("input-nom-joueur");
+    const btnEntrerSalle = document.getElementById("btn-entrer-salle");
+    const feedbackJoueur = document.getElementById("feedback-joueur");
+
+    const listeConnectes = document.getElementById("liste-connectes");
+    const compteurConnectes = document.getElementById("compteur-connectes");
+
+    const btnLancerPartie = document.getElementById("btn-lancer-partie");
+    const feedbackLancer = document.getElementById("feedback-lancer");
+
+    // État local de la session
+    let modeSalle = null; // "createur" | "joueur"
+    let codeSalleActuel = null;
+    let monJoueurId = null;
+    let joueursActuels = [];
+    let unsubscribeJoueurs = null;
+    let unsubscribeEtatSalle = null;
+
+    function setMessage(el, texte, type = "ok") {
+      el.textContent = texte;
+      el.className = "msg-feedback " + (type === "erreur" ? "msg-erreur" : "msg-ok");
+    }
+
+    function genererCode() {
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      let code = "";
+      for (let i = 0; i < 4; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return code;
+    }
+
+    // PARTIE 1A : CRÉER UNE SALLE
+    btnCreerSalle.addEventListener("click", async () => {
+      btnCreerSalle.classList.add("actif-creer");
+      btnRejoindreSalle.classList.remove("actif-rejoindre");
+      zoneCreation.style.display = "block";
+      zoneRejoindre.style.display = "none";
+
+      const code = genererCode();
+      codeSalleActuel = code;
+      modeSalle = "createur";
+      codeSalleAffiche.textContent = code;
+
+      try {
+        await set(ref(db, `salles/${code}`), {
+          code: code,
+          statut: "lobby", // "lobby" | "lancee"
+          creeA: Date.now()
+        });
+
+        setMessage(feedbackSalle, `Salle ${code} créée. Entre ton nom à l'étape 2.`);
+        ecouterSalleEnTempsReel(code);
+      } catch (e) {
+        console.error(e);
+        setMessage(feedbackSalle, "Erreur lors de la création de la salle.", "erreur");
+      }
+    });
+
+    // PARTIE 1B : REJOINDRE UNE SALLE
+    btnRejoindreSalle.addEventListener("click", () => {
+      btnRejoindreSalle.classList.add("actif-rejoindre");
+      btnCreerSalle.classList.remove("actif-creer");
+      zoneRejoindre.style.display = "block";
+      zoneCreation.style.display = "none";
+      modeSalle = "joueur";
+      setMessage(feedbackSalle, "Saisis le code de la salle puis clique sur Valider.");
+      inputCodeRejoindre.focus();
+    });
+
+    btnValiderCode.addEventListener("click", async () => {
+      const code = inputCodeRejoindre.value.trim().toUpperCase();
+      if (!code) {
+        setMessage(feedbackSalle, "Merci d'entrer un code de salle.", "erreur");
+        return;
+      }
+
+      try {
+        const snap = await get(ref(db, `salles/${code}`));
+        if (!snap.exists()) {
+          setMessage(feedbackSalle, `Aucune salle trouvée pour le code ${code}.`, "erreur");
+          return;
+        }
+
+        codeSalleActuel = code;
+        modeSalle = "joueur";
+        setMessage(feedbackSalle, `Connecté à la salle ${code}. Entre ton nom à l'étape 2.`);
+        ecouterSalleEnTempsReel(code);
+        inputNomJoueur.focus();
+      } catch (e) {
+        console.error(e);
+        setMessage(feedbackSalle, "Erreur de vérification du code.", "erreur");
+      }
+    });
+
+    // PARTIE 2 : AJOUTER SON NOM DE JOUEUR DANS LA SALLE
+    btnEntrerSalle.addEventListener("click", async () => {
+      if (!codeSalleActuel) {
+        setMessage(feedbackJoueur, "Commence par créer ou rejoindre une salle (Étape 1).", "erreur");
+        return;
+      }
+
+      const nom = inputNomJoueur.value.trim();
+      if (!nom) {
+        setMessage(feedbackJoueur, "Merci de renseigner ton nom.", "erreur");
+        return;
+      }
+
+      try {
+        const joueursRef = ref(db, `salles/${codeSalleActuel}/joueurs`);
+        const nouveauJoueurRef = push(joueursRef);
+        monJoueurId = nouveauJoueurRef.key;
+
+        await set(nouveauJoueurRef, {
+          id: monJoueurId,
+          nom: nom,
+          estCreateur: modeSalle === "createur",
+          connecteA: Date.now()
+        });
+
+        localStorage.setItem("cvp_code_salle", codeSalleActuel);
+        localStorage.setItem("cvp_joueur_id", monJoueurId);
+        localStorage.setItem("cvp_joueur_nom", nom);
+
+        inputNomJoueur.disabled = true;
+        btnEntrerSalle.disabled = true;
+        setMessage(feedbackJoueur, `Bienvenue ${nom} ! Tu es dans la liste.`);
+      } catch (e) {
+        console.error(e);
+        setMessage(feedbackJoueur, "Impossible de rejoindre la liste.", "erreur");
+      }
+    });
+
+    // PARTIE 3 : ÉCOUTE TEMPS RÉEL DES JOUEURS ET DU STATUT DE LA SALLE
+    function ecouterSalleEnTempsReel(code) {
+      if (unsubscribeJoueurs) unsubscribeJoueurs();
+      if (unsubscribeEtatSalle) unsubscribeEtatSalle();
+
+      const joueursRef = ref(db, `salles/${code}/joueurs`);
+      unsubscribeJoueurs = onValue(joueursRef, (snapshot) => {
+        const data = snapshot.val() || {};
+        joueursActuels = Object.values(data).sort((a, b) => (a.connecteA || 0) - (b.connecteA || 0));
+
+        rendreListeConnectes(joueursActuels);
+        btnLancerPartie.disabled = joueursActuels.length === 0;
+      });
+
+      const salleRef = ref(db, `salles/${code}`);
+      unsubscribeEtatSalle = onValue(salleRef, (snapshot) => {
+        const salle = snapshot.val();
+        if (salle && salle.statut === "lancee" && salle.partieCode) {
+          localStorage.setItem("cvp_code", salle.partieCode);
+          if (modeSalle === "createur") {
+            localStorage.setItem("cvp_role_ecran", "GM");
+            window.location.href = "gm.html";
+          } else {
+            localStorage.setItem("cvp_role_ecran", "JOUEUR");
+            window.location.href = "joueur.html";
+          }
+        }
+      });
+    }
+
+    function rendreListeConnectes(joueurs) {
+      compteurConnectes.textContent = `${joueurs.length} / 17`;
+      compteurConnectes.classList.toggle("complet", joueurs.length === 17);
+
+      if (joueurs.length === 0) {
+        listeConnectes.innerHTML = `<li class="liste-vide">Aucun joueur connecté pour le moment.</li>`;
+        return;
+      }
+
+      listeConnectes.innerHTML = joueurs.map((j, index) => `
+        <li class="item-joueur">
+          <span class="nom-joueur">${index + 1}. ${echapperHTML(j.nom)}${j.estCreateur ? " (Hôte)" : ""}</span>
+          <span class="statut-connecte">● En ligne</span>
+        </li>
+      `).join("");
+    }
+
+    function echapperHTML(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    // RÉPARTITION DES RÔLES (4 Policiers, 5 Voleurs, 8 Citoyens pour 17 joueurs)
+    function genererRoles(nbJoueurs) {
+      let roles = [];
+      if (nbJoueurs === 17) {
+        roles = [
+          ...Array(4).fill("policier"),
+          ...Array(5).fill("voleur"),
+          ...Array(8).fill("citoyen")
+        ];
+      } else {
+        for (let i = 0; i < nbJoueurs; i++) {
+          if (i % 4 === 0) roles.push("policier");
+          else if (i % 3 === 0) roles.push("voleur");
+          else roles.push("citoyen");
+        }
+      }
+      for (let i = roles.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [roles[i], roles[j]] = [roles[j], roles[i]];
+      }
+      return roles;
+    }
+
+    // PARTIE 4 : LANCER LA PARTIE
+    btnLancerPartie.addEventListener("click", async () => {
+      if (!codeSalleActuel || joueursActuels.length === 0) {
+        setMessage(feedbackLancer, "Il faut au moins 1 joueur connecté dans la salle.", "erreur");
+        return;
+      }
+
+      btnLancerPartie.disabled = true;
+      btnLancerPartie.textContent = "Lancement en cours...";
+
+      try {
+        const roles = genererRoles(joueursActuels.length);
+        const joueursObj = {};
+
+        joueursActuels.forEach((j, idx) => {
+          const idJeu = j.id || ("j_" + (idx + 1));
+          joueursObj[idJeu] = {
+            id: idJeu,
+            nom: j.nom,
+            roleInitial: roles[idx],
+            roleActuel: roles[idx],
+            solde: 0,
+            plafondProtection: 1000,
+            historiqueDes: [],
+            actionMancheFaite: false
+          };
+        });
+
+        const etatPartie = {
+          code: codeSalleActuel,
+          manche: 1,
+          etape: "attente_lancement",
+          butinEngage: joueursActuels.length * 1000,
+          butinProtege: 0,
+          totalVoleManche: 0,
+          joueurs: joueursObj
+        };
+
+        await set(ref(db, `parties/${codeSalleActuel}`), etatPartie);
+        await set(ref(db, `salles/${codeSalleActuel}/statut`), "lancee");
+        await set(ref(db, `salles/${codeSalleActuel}/partieCode`), codeSalleActuel);
+
+        localStorage.setItem("cvp_code", codeSalleActuel);
+        if (modeSalle === "createur") {
+          localStorage.setItem("cvp_role_ecran", "GM");
+          window.location.href = "gm.html";
+        } else {
+          localStorage.setItem("cvp_role_ecran", "JOUEUR");
+          window.location.href = "joueur.html";
+        }
+      } catch (e) {
+        console.error(e);
+        setMessage(feedbackLancer, "Erreur au lancement de la partie.", "erreur");
+        btnLancerPartie.disabled = false;
+        btnLancerPartie.textContent = "Lancer la partie";
+      }
+    });
+  </script>
+</body>
+</html>
